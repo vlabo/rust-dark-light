@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{process::Command, str::FromStr};
 
 use anyhow::Context;
 use ini::Ini;
@@ -15,14 +15,50 @@ const CINNAMON: &str = "/org/cinnamon/desktop/interface/gtk-theme";
 fn dconf_detect(path: &str) -> Mode {
     match dconf_rs::get_string(path) {
         Ok(theme) => {
-            if theme.to_lowercase().contains("dark") {
-                Mode::Dark
+            println!("dconf output: {}", theme);
+            if theme.is_empty() {
+                Mode::Default
             } else {
-                Mode::Light
+                if theme.to_lowercase().contains("dark") {
+                    Mode::Dark
+                } else {
+                    Mode::Light
+                }
             }
         }
         Err(_) => Mode::Default,
     }
+}
+
+pub fn gsetting_detect() -> Mode {
+    let mode = match Command::new("gsettings")
+        .arg("get")
+        .arg("org.gnome.desktop.interface")
+        .arg("color-scheme")
+        .output()
+    {
+        Ok(output) => {
+            if let Ok(scheme) = String::from_utf8(output.stdout) {
+                if scheme.contains("prefer-dark") {
+                    Mode::Dark
+                } else if scheme.contains("prefer-light") {
+                    Mode::Dark
+                } else {
+                    Mode::Default
+                }
+            } else {
+                Mode::Default
+            }
+        }
+        Err(_) => Mode::Default,
+    };
+
+    // Fallback to dconf
+    if mode == Mode::Default {
+        return dconf_detect(GNOME);
+    }
+
+    mode
 }
 
 fn kde_detect() -> anyhow::Result<Mode> {

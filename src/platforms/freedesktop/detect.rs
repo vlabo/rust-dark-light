@@ -2,7 +2,7 @@ use detect_desktop_environment::DesktopEnvironment;
 
 use crate::Mode;
 
-use super::{dconf_detect, kde_detect, CINNAMON, GNOME, MATE};
+use super::{dconf_detect, gsetting_detect, kde_detect, CINNAMON, GNOME, MATE};
 
 pub fn detect() -> Mode {
     NonFreeDesktop::detect()
@@ -36,7 +36,7 @@ impl ColorScheme for NonFreeDesktop {
                     Err(_) => Mode::Default,
                 },
                 DesktopEnvironment::Cinnamon => dconf_detect(CINNAMON),
-                DesktopEnvironment::Gnome => dconf_detect(GNOME),
+                DesktopEnvironment::Gnome => gsetting_detect(),
                 DesktopEnvironment::Mate => dconf_detect(MATE),
                 DesktopEnvironment::Unity => dconf_detect(GNOME),
                 _ => Mode::Default,
